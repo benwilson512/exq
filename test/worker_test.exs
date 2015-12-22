@@ -1,5 +1,3 @@
-Code.require_file "test_helper.exs", __DIR__
-
 defmodule WorkerTest do
   use ExUnit.Case
 
@@ -23,7 +21,7 @@ defmodule WorkerTest do
 
   def assert_terminate(worker, normal_terminate) do
     :erlang.monitor(:process, worker)
-    Exq.Worker.Server.work(worker)
+    Exq.Worker.work(worker)
     receive do
       {:'DOWN', _, _, _pid, :normal} -> assert normal_terminate
       {:'DOWN', _, _, _pid, _} -> assert !normal_terminate

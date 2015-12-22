@@ -3,14 +3,13 @@ defmodule Exq.Mixfile do
 
   def project do
     [ app: :exq,
-      version: "0.5.0",
-      elixir: "~> 1.0.0 or ~> 1.1.1",
+      version: "0.5.1",
+      elixir: "~> 1.0",
       elixirc_paths: ["lib"],
       package: [
         maintainers: ["Alex Kira", "Justin McNally", "Nick Sanders", "Udo Kramer", "Daniel Perez", "David Le", "akki91", "Roman Smirnov", "Mike Lawlor", "Benjamin Tan Wei Hao", "Rob Gilson"],
         links: %{"GitHub" => "https://github.com/akira/exq"},
-        files: ~w(lib test) ++
-               ~w(LICENSE mix.exs README.md)
+        files: ~w(lib LICENSE mix.exs README.md)
       ],
       description: """
       Exq is a job processing library compatible with Resque / Sidekiq for the Elixir language.
@@ -24,7 +23,7 @@ defmodule Exq.Mixfile do
   def application do
     [
       mod: { Exq, [] },
-      applications: [:logger, :tzdata, :redix, :timex]
+      applications: [:logger, :tzdata, :redix, :timex, :poolboy]
     ]
   end
 
@@ -36,6 +35,7 @@ defmodule Exq.Mixfile do
       { :redix, ">= 0.0.0"},
       { :poison, ">= 1.2.0 and < 2.0.0"},
       { :timex, "~> 0.19.5" },
+      { :poolboy, "~> 1.5.1" },
       { :excoveralls, "~> 0.3", only: :test },
       { :flaky_connection, git: "https://github.com/hamiltop/flaky_connection.git", only: :test}
     ]

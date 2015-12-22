@@ -1,5 +1,3 @@
-Code.require_file "test_helper.exs", __DIR__
-
 defmodule PerformanceTest do
   use ExUnit.Case
   require Logger
@@ -51,7 +49,7 @@ defmodule PerformanceTest do
 
     elapsed_ms = :timer.now_diff(:os.timestamp, started) / 1_000
     Logger.debug "Perf test took #{elapsed_ms / 1_000} secs"
-    count = Exq.Redis.Connection.llen!(:testredis, "test:queue:default")
+    count = Exq.Redis.llen!(:testredis, "test:queue:default")
 
     assert count == 0
     assert elapsed_ms < max_timeout_ms

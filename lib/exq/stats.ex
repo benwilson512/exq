@@ -1,4 +1,4 @@
-defmodule Exq.Stats.Server do
+defmodule Exq.Stats do
   use GenServer
   use Timex
   alias Exq.Redis.JobQueue
@@ -35,8 +35,8 @@ defmodule Exq.Stats.Server do
 ## gen server callbacks
 ##===========================================================
 
-  def start_link(opts \\[]) do
-    GenServer.start_link(__MODULE__, [opts], name: opts[:name] || __MODULE__)
+  def start_link(config, opts \\ []) do
+    GenServer.start_link(__MODULE__, config, opts)
   end
 
   # These are the callbacks that GenServer.Behaviour will use

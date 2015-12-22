@@ -5,24 +5,21 @@ defmodule Exq do
 
   # OTP Application
   def start(_type, _args) do
-    Exq.Manager.Supervisor.start_link
+    Application.get_all_env(:exq)
+    |> Config.build
+    |> Exq.Supervisor.start_link
   end
 
   # Exq methods
 
-  def start(opts \\ []) do
-    Exq.Manager.Supervisor.start_link(opts)
+  def start(config, opts \\ []) do
+    start_link(config, opts)
   end
 
-  def start_link(opts \\ []) do
-    Exq.Manager.Supervisor.start_link(opts)
-  end
-
-  def stop(pid) when is_pid(pid) do
-    Process.exit(pid, :shutdown)
-  end
-  def stop(sup) when is_atom(sup) do
-    stop(Process.whereis(sup))
+  def start_link(config, opts \\ []) do
+    config
+    |> Config.build
+    |> Exq.Supervisor.start_link(opts)
   end
 
   def enqueue(pid, queue, worker, args) do

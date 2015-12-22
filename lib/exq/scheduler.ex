@@ -1,4 +1,4 @@
-defmodule Exq.Scheduler.Server do
+defmodule Exq.Scheduler do
   require Logger
   use GenServer
   alias Exq.Support.Config
@@ -7,12 +7,8 @@ defmodule Exq.Scheduler.Server do
     defstruct redis: nil, namespace: nil, queues: nil, scheduler_poll_timeout: nil
   end
 
-  def start(opts \\ []) do
-    GenServer.start(__MODULE__, [opts])
-  end
-
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, [opts], [{:name, opts[:name]|| __MODULE__}])
+  def start_link(config, opts \\ []) do
+    GenServer.start_link(__MODULE__, config, opts)
   end
 
   def start_timeout(pid) do

@@ -1,8 +1,8 @@
-defmodule Exq.Worker.Server do
+defmodule Exq.Worker do
   require Logger
   use GenServer
 
-  alias Exq.Stats.Server, as: Stats
+  alias Exq.Stat, as: Stats
 
   defmodule State do
     defstruct job_json: nil, job: nil, manager: nil, queue: nil, namespace: nil,
@@ -58,7 +58,7 @@ defmodule Exq.Worker.Server do
   def terminate(:normal, state) do
     case Process.alive?(state.manager) do
       true ->
-        Exq.Manager.Server.job_terminated(state.manager, state.namespace, state.queue, state.job_json)
+        Exq.Manager.job_terminated(state.manager, state.namespace, state.queue, state.job_json)
         Stats.process_terminated(state.stats, state.namespace, state.process_info)
         Stats.record_processed(state.stats, state.namespace, state.job)
       _ ->
@@ -72,7 +72,7 @@ defmodule Exq.Worker.Server do
   def terminate(error, state) do
     case Process.alive?(state.manager) do
       true ->
-        Exq.Manager.Server.job_terminated(state.manager, state.namespace, state.queue, state.job_json)
+        Exq.Manager.job_terminated(state.manager, state.namespace, state.queue, state.job_json)
         Stats.process_terminated(state.stats, state.namespace, state.process_info)
         error_msg = Inspect.Algebra.format(Inspect.Algebra.to_doc(error, %Inspect.Opts{}), %Inspect.Opts{}.width)
         Stats.record_failure(state.stats, state.namespace, to_string(error_msg), state.job)
