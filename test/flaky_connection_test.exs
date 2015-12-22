@@ -1,6 +1,6 @@
 Code.require_file "test_helper.exs", __DIR__
 
-defmodule FlakyConnectionTest do
+defmodule FlakyRedisTest do
   use ExUnit.Case
   require Logger
   import ExqTestUtil
@@ -23,7 +23,7 @@ defmodule FlakyConnectionTest do
 
   test "redis_timeout allows for higher latency" do
     Application.start(:ranch)
-    conn = FlakyConnection.start(redis_host, redis_port)
+    conn = FlakyRedis.start(redis_host, redis_port)
 
     #Needs to be x2 latency + ~10
     Mix.Config.persist([exq: [redis_timeout: 2010]])
@@ -31,17 +31,17 @@ defmodule FlakyConnectionTest do
     Process.register(self(), :tester)
     {:ok, sup} = Exq.start([name: ExqPerf, host: 'localhost', port: conn.port, namespace: "test", concurrency: :infinite])
 
-    FlakyConnection.set_latency(conn, 1000)
+    FlakyRedis.set_latency(conn, 1000)
 
 
-    {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyConnectionTest.Worker, ["work"])
+    {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyRedisTest.Worker, ["work"])
 
     stop_process(sup)
   end
 
   test "redis_timeout higher than 5000 without genserver_timeout" do
     Application.start(:ranch)
-    conn = FlakyConnection.start(redis_host, redis_port)
+    conn = FlakyRedis.start(redis_host, redis_port)
 
     #Needs to be x2 latency + ~10
     Mix.Config.persist([exq: [redis_timeout: 11010]])
@@ -50,10 +50,10 @@ defmodule FlakyConnectionTest do
 
     {:ok, sup} = Exq.start([name: ExqPerf, host: 'localhost', port: conn.port, namespace: "test", concurrency: :infinite])
 
-    FlakyConnection.set_latency(conn, 5500)
+    FlakyRedis.set_latency(conn, 5500)
 
     result = try do
-      {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyConnectionTest.Worker, ["work"])
+      {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyRedisTest.Worker, ["work"])
     catch
       :exit, {:timeout, _} -> :failed
     end
@@ -65,7 +65,7 @@ defmodule FlakyConnectionTest do
 
   test "redis_timeout higher than 5000 with genserver_timeout" do
     Application.start(:ranch)
-    conn = FlakyConnection.start(redis_host, redis_port)
+    conn = FlakyRedis.start(redis_host, redis_port)
 
     #redis_timeout needs to be x2 latency + ~10
     #genserver_timeout needs to be x2 latency + ~30
@@ -75,9 +75,9 @@ defmodule FlakyConnectionTest do
 
     {:ok, sup} = Exq.start([name: ExqPerf, host: 'localhost', port: conn.port, namespace: "test", concurrency: :infinite])
 
-    FlakyConnection.set_latency(conn, 5500)
+    FlakyRedis.set_latency(conn, 5500)
 
-    {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyConnectionTest.Worker, ["work"])
+    {:ok, _} = Exq.enqueue(ExqPerf.Enqueuer, "default", FlakyRedisTest.Worker, ["work"])
 
     stop_process(sup)
   end

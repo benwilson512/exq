@@ -4,6 +4,10 @@ config :logger, :console,
   format: "\n$date $time [$level]: $message \n"
 
 config :exq,
+  pool: [
+    size: 5,
+    max_overflow: 10
+  ],
   host: "127.0.0.1",
   port: 6379,
   namespace: "exq",

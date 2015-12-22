@@ -144,14 +144,6 @@ defmodule Exq.Manager.Server do
     {:ok, state}
   end
 
-  def terminate(_reason, state) do
-    case Process.whereis(state.redis) do
-      nil -> :ignore
-      pid -> Redix.stop(pid)
-    end
-    :ok
-  end
-
 ##===========================================================
 ## Internal Functions
 ##===========================================================
@@ -257,7 +249,7 @@ defmodule Exq.Manager.Server do
 
   defp check_redis_connection(redis, opts) do
     try do
-      {:ok, _} = Exq.Redis.Connection.q(redis, ~w(PING))
+      {:ok, _} = Exq.Redis.q(redis, ~w(PING))
     catch
       err, reason ->
         opts = Exq.Redis.Supervisor.info(opts)

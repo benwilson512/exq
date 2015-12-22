@@ -2,7 +2,7 @@ defmodule Exq.Redis.JobQueue do
   use Timex
   require Logger
 
-  alias Exq.Redis.Connection
+  alias Exq.Redis
   alias Exq.Support.Json
   alias Exq.Support.Job
   alias Exq.Support.Config
@@ -12,11 +12,11 @@ defmodule Exq.Redis.JobQueue do
   @default_queue "default"
 
   def find_job(redis, namespace, jid, :scheduled) do
-    Connection.zrangebyscore!(redis, scheduled_queue_key(namespace))
+    Redis.zrangebyscore!(redis, scheduled_queue_key(namespace))
       |> find_job(jid)
   end
   def find_job(redis, namespace, jid, queue) do
-    Connection.lrange!(redis, queue_key(namespace, queue))
+    Redis.lrange!(redis, queue_key(namespace, queue))
       |> find_job(jid)
   end
 
@@ -84,7 +84,7 @@ defmodule Exq.Redis.JobQueue do
   def enqueue_job_at(redis, _namespace, job_json, jid, time, scheduled_queue) do
     score = time_to_score(time)
     try do
-      case Connection.zadd(redis, scheduled_queue, score, job_json) do
+      case Redis.zadd(redis, scheduled_queue, score, job_json) do
         {:ok, _} -> {:ok, jid}
         other    -> other
       end
@@ -114,7 +114,9 @@ defmodule Exq.Redis.JobQueue do
     case resp do
       {:error, reason} -> [{:error, reason}]
       {:ok, success} ->
-        success |> Enum.zip(queues) |> Enum.map(fn({resp, queue}) ->
+        success
+        |> Enum.zip(queues)
+        |> Enum.map(fn({resp, queue}) ->
           case resp do
             :undefined -> {:ok, {:none, queue}}
             nil        -> {:ok, {:none, queue}}
@@ -126,7 +128,7 @@ defmodule Exq.Redis.JobQueue do
   end
 
   def re_enqueue_backup(redis, namespace, host, queue) do
-    resp = redis |> Connection.rpoplpush(
+    resp = redis |> Redis.rpoplpush(
       backup_queue_key(namespace, host, queue),
       queue_key(namespace, queue))
     case resp do
@@ -140,7 +142,7 @@ defmodule Exq.Redis.JobQueue do
   end
 
   def remove_job_from_backup(redis, namespace, host, queue, job_json) do
-    Connection.lrem!(redis, backup_queue_key(namespace, host, queue), job_json)
+    Redis.lrem!(redis, backup_queue_key(namespace, host, queue), job_json)
   end
 
   def scheduler_dequeue(redis, namespace, queues) when is_list(queues) do
@@ -148,7 +150,7 @@ defmodule Exq.Redis.JobQueue do
   end
   def scheduler_dequeue(redis, namespace, queues, max_score) when is_list(queues) do
     Enum.reduce(schedule_queues(namespace), 0, fn(schedule_queue, acc) ->
-      deq_count = Connection.zrangebyscore!(redis, schedule_queue, 0, max_score)
+      deq_count = Redis.zrangebyscore!(redis, schedule_queue, 0, max_score)
         |> scheduler_dequeue_requeue(redis, namespace, queues, schedule_queue, 0)
       deq_count + acc
     end)
@@ -156,7 +158,7 @@ defmodule Exq.Redis.JobQueue do
 
   def scheduler_dequeue_requeue([], _redis, _namespace, _queues, _schedule_queue, count), do: count
   def scheduler_dequeue_requeue([job_json|t], redis, namespace, queues, schedule_queue, count) do
-    if Connection.zrem!(redis, schedule_queue, job_json) == 1 do
+    if Redis.zrem!(redis, schedule_queue, job_json) == 1 do
       if Enum.count(queues) == 1 do
         enqueue(redis, namespace, hd(queues), job_json)
       else
@@ -227,7 +229,7 @@ defmodule Exq.Redis.JobQueue do
     job = %{job | failed_at: failed_at, retry_count: job.retry_count || 0,
       error_class: "ExqGenericError", error_message: error}
     job_json = Job.to_json(job)
-    Connection.zadd!(redis, full_key(namespace, "dead"), time_to_score(Time.now), job_json)
+    Redis.zadd!(redis, full_key(namespace, "dead"), time_to_score(Time.now), job_json)
   end
 
   def to_job_json(queue, worker, args) do

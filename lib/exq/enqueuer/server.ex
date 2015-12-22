@@ -2,7 +2,7 @@ defmodule Exq.Enqueuer.Server do
   require Logger
 
   alias Exq.Support.Config
-  alias Exq.Redis.Connection
+  alias Exq.Redis
   alias Exq.Redis.JobQueue
   alias Exq.Redis.JobStat
   import Exq.Redis.JobQueue, only: [full_key: 2]
@@ -184,16 +184,9 @@ defmodule Exq.Enqueuer.Server do
     {:ok, state}
   end
 
-  def terminate(_reason, state) do
-    if state.redis_owner do
-      Redix.stop(state.redis)
-    end
-    :ok
-  end
-
   # Internal Functions
   def get_count(redis, namespace, key) do
-    case Connection.get!(redis, JobQueue.full_key(namespace, "stat:#{key}")) do
+    case Redis.get!(redis, JobQueue.full_key(namespace, "stat:#{key}")) do
       :undefined ->
         0
       count ->
@@ -202,32 +195,32 @@ defmodule Exq.Enqueuer.Server do
   end
 
   def list_queues(redis, namespace) do
-    Connection.smembers!(redis, full_key(namespace, "queues"))
+    Redis.smembers!(redis, full_key(namespace, "queues"))
   end
 
   def list_jobs(redis, namespace, :scheduled) do
-    Connection.zrangebyscorewithscore!(redis, full_key(namespace, "schedule"))
+    Redis.zrangebyscorewithscore!(redis, full_key(namespace, "schedule"))
   end
   def list_jobs(redis, namespace, queue) do
-    Connection.lrange!(redis, full_key(namespace, "queue:#{queue}"))
+    Redis.lrange!(redis, full_key(namespace, "queue:#{queue}"))
   end
 
   def list_failed(redis, namespace) do
-    Connection.zrange!(redis, full_key(namespace, "dead"))
+    Redis.zrange!(redis, full_key(namespace, "dead"))
   end
 
   def list_retry(redis, namespace) do
-    Connection.zrange!(redis, full_key(namespace, "retry"))
+    Redis.zrange!(redis, full_key(namespace, "retry"))
   end
 
   def queue_size(redis, namespace, :scheduled) do
-    Connection.zcard!(redis, full_key(namespace, "schedule"))
+    Redis.zcard!(redis, full_key(namespace, "schedule"))
   end
   def queue_size(redis, namespace, :retry) do
-    Connection.zcard!(redis, full_key(namespace, "retry"))
+    Redis.zcard!(redis, full_key(namespace, "retry"))
   end
   def queue_size(redis, namespace, queue) do
-    Connection.llen!(redis, full_key(namespace, "queue:#{queue}"))
+    Redis.llen!(redis, full_key(namespace, "queue:#{queue}"))
   end
 
 end
