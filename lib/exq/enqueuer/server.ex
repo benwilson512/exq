@@ -16,10 +16,8 @@ defmodule Exq.Enqueuer.Server do
     GenServer.start(__MODULE__, [opts])
   end
 
-  def start_link(opts \\ []) do
-    redis_name = opts[:redis] || Exq.Redis.Supervisor.client_name(opts[:name])
-    opts = Keyword.merge(opts, [redis: redis_name])
-    GenServer.start_link(__MODULE__, [opts], name: opts[:name] || __MODULE__)
+  def start_link(config, opts \\ []) do
+    GenServer.start_link(__MODULE__, config, opts)
   end
 
 ##===========================================================

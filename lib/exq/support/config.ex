@@ -17,6 +17,24 @@ defmodule Exq.Support.Config do
     max_retries: 25
   ]
 
+  @type t :: %__MODULE__{
+    redis: %{
+      host: binary,
+      port: non_neg_integer,
+      database: non_neg_integer,
+      password: binary,
+      namespace: binary
+    },
+    scheduler_poll_timeout: non_neg_integer,
+    poll_timeout: non_neg_integer,
+    scheduler_enable: true,
+    reconnect_on_sleep: non_neg_integer,
+    concurrency: non_neg_integer,
+    redis_timeout: non_neg_integer,
+    genserver_timeout: non_neg_integer,
+    max_retries: non_neg_integer
+  }
+
   @moduledoc """
   This module holds the default configuration for Exq.
 
@@ -36,20 +54,26 @@ defmodule Exq.Support.Config do
   making it impractical to use `System.get_env` directly in the config files.
   """
 
-  def get() do
+  @doc """
+  Builds an Exq configuration struct.
+  """
+  @spec build(overrides :: Dict.t) :: t
+  def build(overrides) do
+    overrides = overrides |> Enum.into(%{})
+
     %__MODULE__{}
     |> Map.from_struct
     |> Enum.reduce(%__MODULE__{}, fn
       {:redis, redis}, config ->
-        Map.put(config, :redis, build_redis_config(redis))
+        Map.put(config, :redis, build_redis_config(redis, overrides))
       {k, v}, config ->
-        Map.put(config, k, Application.get_env(:exq, k, v))
+        Map.put(config, k, Map.get(overrides, k, v))
     end)
   end
 
-  defp build_redis_config(redis) do
+  defp build_redis_config(redis, overrides) do
     Enum.reduce(redis, %{}, fn {k, v}, config ->
-      Map.put(config, k, Application.get_env(:exq, k, v))
+      Map.put(config, k, Map.get(overrides, k, v))
     end)
   end
 end

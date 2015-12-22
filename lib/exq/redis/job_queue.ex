@@ -13,11 +13,11 @@ defmodule Exq.Redis.JobQueue do
 
   def find_job(redis, namespace, jid, :scheduled) do
     Redis.zrangebyscore!(redis, scheduled_queue_key(namespace))
-      |> find_job(jid)
+    |> find_job(jid)
   end
   def find_job(redis, namespace, jid, queue) do
     Redis.lrange!(redis, queue_key(namespace, queue))
-      |> find_job(jid)
+    |> find_job(jid)
   end
 
   def find_job(jobs, jid) do
@@ -26,13 +26,13 @@ defmodule Exq.Redis.JobQueue do
       job.jid == jid
     end
 
-    error = Enum.find(Enum.with_index(jobs), finder)
-
-    case error do
+    jobs
+    |> Enum.with_index
+    |> Enum.find(finder)
+    |> case do
       nil ->
         {:not_found, nil}
-      _ ->
-        {job, idx} = error
+      {job, idx} ->
         {:ok, job, idx}
     end
   end
